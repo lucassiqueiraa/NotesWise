@@ -42,14 +42,14 @@ public static class CategoryEndpoints
     }
 
     private static async Task<IResult> CreateCategory(
-        HttpContext context, 
-        CreateCategoryRequest request, 
+        HttpContext context,
+        CreateCategoryRequest request,
         IDataStore dataStore)
     {
         try
         {
             var userId = context.GetUserIdOrThrow();
-            
+
             var category = new Category
             {
                 Name = request.Name,
@@ -67,15 +67,15 @@ public static class CategoryEndpoints
     }
 
     private static async Task<IResult> UpdateCategory(
-        HttpContext context, 
-        string id, 
-        UpdateCategoryRequest request, 
+        HttpContext context,
+        string id,
+        UpdateCategoryRequest request,
         IDataStore dataStore)
     {
         try
         {
             var userId = context.GetUserIdOrThrow();
-            
+
             var existingCategory = await dataStore.GetCategoryByIdAsync(id, userId);
             if (existingCategory == null)
             {
@@ -98,14 +98,14 @@ public static class CategoryEndpoints
     }
 
     private static async Task<IResult> DeleteCategory(
-        HttpContext context, 
-        string id, 
+        HttpContext context,
+        string id,
         IDataStore dataStore)
     {
         try
         {
             var userId = context.GetUserIdOrThrow();
-            
+
             var success = await dataStore.DeleteCategoryAsync(id, userId);
             return success ? Results.NoContent() : Results.NotFound();
         }

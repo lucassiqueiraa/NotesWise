@@ -28,7 +28,41 @@ namespace NotesWise.API.Services
 
         public async Task<string> GenerateSummaryAsync(string content)
         {
-            return "";
+            var request = new OpenAiRequest
+            {
+                model = "gpt-4o-mini",
+                input = $"Resuma este texto de forma concisa:{content}"
+            };
+
+            var json = JsonSerializer.Serialize(request);
+
+            var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var httpRequest = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses")
+            {
+                Content = httpContent
+            };
+
+            httpRequest.Headers.Add("Authorization", $"Bearer {_openAiKey}");
+
+            var response = await _httpClient.SendAsync(httpRequest);
+
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorText = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Erro ao chamar OpenAI: {response.StatusCode} - {errorText}");
+            }
+
+            var responseText = await response.Content.ReadAsStringAsync();
+
+            Console.WriteLine(response.Content);
+
+            var openAiResponse = JsonSerializer.Deserialize<OpenAiResponse>(responseText);
+
+            var summary = openAiResponse.output.First().content.First().text;
+
+            return summary;
         }
     }
 }

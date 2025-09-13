@@ -1,5 +1,5 @@
 @NotesWiseAPIHostAddress = http://localhost:5181
-@supabaseToken = 
+@supabaseToken = d2be9c69-c33c-4774-9d52-a4357383c442
 @categoryId = 
 @noteId = 
 @flashcardId = 

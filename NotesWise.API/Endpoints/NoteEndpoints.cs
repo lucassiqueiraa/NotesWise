@@ -32,8 +32,8 @@ public static class NoteEndpoints
     }
 
     private static async Task<IResult> GetNotes(
-        HttpContext context, 
-        IDataStore dataStore, 
+        HttpContext context,
+        IDataStore dataStore,
         string? categoryId = null)
     {
         try
@@ -49,8 +49,8 @@ public static class NoteEndpoints
     }
 
     private static async Task<IResult> GetNote(
-        HttpContext context, 
-        string id, 
+        HttpContext context,
+        string id,
         IDataStore dataStore)
     {
         try
@@ -66,15 +66,16 @@ public static class NoteEndpoints
     }
 
     private static async Task<IResult> CreateNote(
-        HttpContext context, 
-        CreateNoteRequest request, 
+        HttpContext context,
+        CreateNoteRequest request,
         IDataStore dataStore,
         IAiService aiService)
     {
         try
         {
+            Console.WriteLine($"Content recebido: {request.Content}");
             //var userId = context.GetUserIdOrThrow();
-            
+
             // Validate category exists if provided
             if (!string.IsNullOrEmpty(request.CategoryId))
             {
@@ -109,15 +110,15 @@ public static class NoteEndpoints
     }
 
     private static async Task<IResult> UpdateNote(
-        HttpContext context, 
-        string id, 
-        UpdateNoteRequest request, 
+        HttpContext context,
+        string id,
+        UpdateNoteRequest request,
         IDataStore dataStore)
     {
         try
         {
             var userId = context.GetUserIdOrThrow();
-            
+
             var existingNote = await dataStore.GetNoteByIdAsync(id, userId);
             if (existingNote == null)
             {
@@ -156,14 +157,14 @@ public static class NoteEndpoints
     }
 
     private static async Task<IResult> DeleteNote(
-        HttpContext context, 
-        string id, 
+        HttpContext context,
+        string id,
         IDataStore dataStore)
     {
         try
         {
             var userId = context.GetUserIdOrThrow();
-            
+
             var success = await dataStore.DeleteNoteAsync(id, userId);
             return success ? Results.NoContent() : Results.NotFound();
         }
