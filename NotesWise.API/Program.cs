@@ -96,6 +96,7 @@ if (!app.Environment.IsDevelopment())
 app.MapCategoryEndpoints();
 app.MapNoteEndpoints();
 app.MapFlashcardEndpoints();
+app.MapAIEndpoints();
 
 // Health check endpoint
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))

@@ -5,21 +5,82 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using NotesWise.API.Services.Models;
+using NotesWise.API.Models;
+
 
 namespace NotesWise.API.Services
 {
     public class AiService : IAiService
     {
         readonly HttpClient _httpClient;
+        private readonly ILogger<AiService> _logger;
         readonly string _openAiKey;
         readonly string _geminiApiKey;
-        // readonly JsonSerializerOptions _jsonOptions;
-        public AiService(HttpClient httpClient, IConfiguration configuration)
+        readonly string _elevenLabsApiKey;
+        readonly JsonSerializerOptions _jsonOptions;
+        public AiService(HttpClient httpClient, IConfiguration configuration, ILogger<AiService> logger)
         {
             _httpClient = httpClient;
+            _logger = logger;
             _openAiKey = configuration["OpenAi:ApiKey"] ?? "";
             _geminiApiKey = configuration["Gemini:ApiKey"] ?? "";
+            _elevenLabsApiKey = configuration["ElevenLabs:ApiKey"] ?? "";
+
+            _jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+                WriteIndented = false
+            };
         }
+
+        public async Task<string> GenerateAudioAsync(string text, string voice = "alloy")
+        {
+            try
+            {
+                var voiceDictionary = new Dictionary<string, string>
+                {
+                    { "burt", "4YYIPFl9wE5c4L2eu2Gb" },
+                };
+
+                var voiceId = voiceDictionary[voice];
+
+                var request = new ElevenLabsRequest
+                {
+                    Text = text,
+                    Model_Id = "eleven_multilingual_v2",
+                    Voice_Settings = new ElevenLabsVoiceSettings
+                    {
+                        Stability = 0.5,
+                        Similarity_Boost = 0.75
+                    }
+                };
+
+                var json = JsonSerializer.Serialize(request, _jsonOptions);
+
+                var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var httpRequest = new HttpRequestMessage(HttpMethod.Post, $"https://api.elevenlabs.io/v1/text-to-speech/{voiceId}")
+                {
+                    Content = httpContent
+                };
+
+                httpRequest.Headers.Add("xi-api-key", $"{_elevenLabsApiKey}");
+
+                var response = await _httpClient.SendAsync(httpRequest);
+
+                var audioBytes = await response.Content.ReadAsByteArrayAsync();
+
+                var base64Audio = Convert.ToBase64String(audioBytes);
+
+                return base64Audio;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating audio");
+                throw;
+            }
+        }
+
 
         public async Task<string> GenerateSummaryAsync(string content)
         {
