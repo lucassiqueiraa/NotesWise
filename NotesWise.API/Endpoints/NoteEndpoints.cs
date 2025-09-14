@@ -73,7 +73,7 @@ public static class NoteEndpoints
     {
         try
         {
-            Console.WriteLine($"Content recebido: {request.Content}");
+
             //var userId = context.GetUserIdOrThrow();
 
             // Validate category exists if provided

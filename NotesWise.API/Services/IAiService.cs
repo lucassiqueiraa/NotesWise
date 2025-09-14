@@ -8,5 +8,6 @@ namespace NotesWise.API.Services
     public interface IAiService
     {
         Task<string> GenerateSummaryAsync(string content);
+        Task<string> GenerateAudioAsync(string text, string voice = "burt");
     }
 }
