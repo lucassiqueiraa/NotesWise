@@ -17,6 +17,23 @@ namespace NotesWise.API.Services.Models
         public required string Summary { get; set; }
     }
 
+    public class GenerateFlashcardsRequest
+    {
+        public required string Content { get; set; }
+    }
+
+    public class GenerateFlashcardsResponse
+    {
+        public required List<FlashcardData> Flashcards { get; set; }
+    }
+
+    public class FlashcardData
+    {
+        public required string Question { get; set; }
+        public required string Answer { get; set; }
+    }
+
+
 
     public class GenerateAudioRequest
     {
@@ -29,26 +46,52 @@ namespace NotesWise.API.Services.Models
         public required string AudioContent { get; set; } // Base64 encoded audio
     }
 
+
+    public class GenerateFlashcardAudioRequest
+    {
+        public string Voice { get; set; } = "alloy";
+        public string Type { get; set; } = "question"; // "question", "answer", or "both"
+    }
+
+    public class GenerateFlashcardAudioResponse
+    {
+        public string? QuestionAudioContent { get; set; } // Base64 encoded audio for question
+        public string? AnswerAudioContent { get; set; } // Base64 encoded audio for answer
+    }
     //OpenAI API Models
     public class OpenAiRequest
     {
-        public string model { get; set; }
-        public string input { get; set; }
+        public string Model { get; set; }
+        public required List<OpenAiMessage> Input { get; set; }
+        public int? MaxOutputTokens { get; set; } = null;
+    }
+
+    public class OpenAiMessage
+    {
+        public required string Role { get; set; }
+        public required List<OpenAIContent> Content { get; set; }
+    }
+
+    public class OpenAIContent
+    {
+        public required string Type { get; set; }
+        public required string Text { get; set; }
     }
 
     public class OpenAiResponse
     {
-        public List<OpenAiOutput> output { get; set; }
+        public List<OpenAiOutput> Output { get; set; }
     }
 
     public class OpenAiOutput
     {
-        public List<OpenAiContent> content { get; set; }
+        public string Type { get; set; } = "";
+        public List<OpenAiContent> Content { get; set; }
     }
 
     public class OpenAiContent
     {
-        public string text { get; set; }
+        public string? Text { get; set; }
     }
 
     public class GeminiTextResponse

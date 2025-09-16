@@ -15,6 +15,10 @@ public static class AIEndpoints
             .WithName("GenerateSummary")
             .WithOpenApi();
 
+        group.MapPost("generate-flashcards", GenerateFlashcards)
+            .WithName("GenerateFlashcards")
+            .WithOpenApi();
+
         group.MapPost("generate-audio", GenerateAudio)
             .WithName("GenerateAudio")
             .WithOpenApi();
@@ -52,6 +56,37 @@ public static class AIEndpoints
         }
     }
 
+    private static async Task<IResult> GenerateFlashcards(
+    HttpContext context,
+    GenerateFlashcardsRequest request,
+    IAiService aiService)
+    {
+        try
+        {
+            // Validate user is authenticated
+            //context.GetUserIdOrThrow();
+
+            if (string.IsNullOrWhiteSpace(request.Content))
+            {
+                return Results.BadRequest("Content is required");
+            }
+
+            var flashcards = await aiService.GenerateFlashcardsAsync(request.Content);
+
+            return Results.Ok(new GenerateFlashcardsResponse { Flashcards = flashcards });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Results.Unauthorized();
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(
+                title: "Failed to generate flashcards",
+                detail: ex.Message,
+                statusCode: 500);
+        }
+    }
 
     private static async Task<IResult> GenerateAudio(
         HttpContext context,
