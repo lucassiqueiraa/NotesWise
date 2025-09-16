@@ -82,6 +82,124 @@ namespace NotesWise.API.Services
         }
 
 
+        public async Task<List<FlashcardData>> GenerateFlashcardsAsync(string content)
+        {
+            try
+            {
+                var request = new OpenAiRequest
+                {
+                    Model = "gpt-5",
+                    Input = new List<OpenAiMessage>
+                    {
+                        new()
+                        {
+                            Role = "system",
+                            Content = new List<OpenAIContent>
+                            {
+                                new OpenAIContent
+                                {
+                                    Text = "Você é um assistente especializado em criar flashcards de estudo. Crie flashcards no formato de perguntas e respostas baseados no conteúdo fornecido. Retorne um array JSON válido com objetos contendo \"question\" e \"answer\". Crie entre 5 a 10 flashcards relevantes.",
+                                    Type = "input_text"
+                                }
+                            }
+                        },
+                        new()
+                        {
+                            Role = "user",
+                            Content = new List<OpenAIContent>
+                            {
+                                new OpenAIContent
+                                {
+                                    Text = $"Crie flashcards de estudo (perguntas e respostas) baseados no seguinte conteúdo:\n\n{content}\n\nRetorne apenas um array JSON válido no formato: [{{\"question\": \"pergunta\", \"answer\": \"resposta\"}}]",
+                                    Type = "input_text"
+                                }
+                            }
+                        }
+                    }
+                };
+
+                var json = JsonSerializer.Serialize(request, _jsonOptions);
+                var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var httpRequest = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses")
+                {
+                    Content = httpContent
+                };
+
+                httpRequest.Headers.Add("Authorization", $"Bearer {_openAiKey}");
+
+                var response = await _httpClient.SendAsync(httpRequest);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogError("OpenAI API error: {StatusCode} - {Content}", response.StatusCode, errorContent);
+                    throw new Exception($"Failed to generate flashcards: {response.StatusCode}");
+                }
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                Console.WriteLine(responseContent);
+
+                var openAIResponse = JsonSerializer.Deserialize<OpenAiResponse>(responseContent, _jsonOptions);
+
+                var flashcardsText = openAIResponse?.Output?.First(c => c.Type == "message").Content?.First().Text ?? "";
+
+
+                if (string.IsNullOrEmpty(flashcardsText))
+                {
+                    throw new Exception("No flashcards generated from OpenAI response");
+                }
+
+                // TODO: Limpar Texto
+                flashcardsText = flashcardsText.Replace("```json", "").Replace("```", "").Trim();
+
+                try
+                {
+                    var flashcards = JsonSerializer.Deserialize<List<FlashcardData>>(flashcardsText, _jsonOptions); // TODO
+
+                    return flashcards ?? new List<FlashcardData>();
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogError(ex, "Error parsing flashcards JSON: {Content}", flashcardsText);
+                    throw new Exception("Failed to parse generated flashcards");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating flashcards");
+                throw;
+            }
+        }
+
+        public async Task<GenerateFlashcardAudioResponse> GenerateFlashcardAudioAsync(Flashcard flashcard, string voice = "burt", string type = "both")
+        {
+            try
+            {
+                var response = new GenerateFlashcardAudioResponse();
+
+                if (type == "question" || type == "both")
+                {
+                    var questionAudio = await GenerateAudioAsync(flashcard.Question, voice);
+                    response.QuestionAudioContent = questionAudio;
+                }
+
+                if (type == "answer" || type == "both")
+                {
+                    var answerAudio = await GenerateAudioAsync(flashcard.Answer, voice);
+                    response.AnswerAudioContent = answerAudio;
+                }
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating flashcard audio for flashcard {FlashcardId}", flashcard.Id);
+                throw;
+            }
+        }
+
         public async Task<string> GenerateSummaryAsync(string content)
         {
             var request = new
